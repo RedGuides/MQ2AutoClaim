@@ -100,10 +100,10 @@ PLUGIN_API VOID OnPulse(VOID)
 
 	static unsigned long long Tick = 0;
 	static unsigned long long AbortTick = 0;
-	static char szDesc[MAX_STRING];
-	static char szName[MAX_STRING];//This is the account name.
-	static char szCash[64];
-	static char szDate[12];
+	static char szDesc[MAX_STRING] = { 0 };
+	static char szName[MAX_STRING] = { 0 };//This is the account name.
+	static char szCash[64] = { 0 };
+	static char szDate[12] = { 0 };
 	CSidlScreenWnd* MarketWnd = (CSidlScreenWnd*)FindMQ2Window("MarketPlaceWnd");
 	CXWnd* Funds;
 	if (MarketWnd)
