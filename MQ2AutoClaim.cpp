@@ -66,7 +66,7 @@ void ParseDate(char* s, int& m, int& d, int& y)
 			case 3: y = y * 10 + (*s - '0'); break;
 			}
 		}
-		if (*s == '/') c++;
+		if (*s == '/' || *s == '\\') c++;//CWTN: I used the wrong slash so the dates were not parsing correctly. Added here to automatically correct my mistake.
 		s++;
 	}
 	if (y < 100) y += 2000;
@@ -151,7 +151,7 @@ PLUGIN_API VOID OnPulse(VOID)
 		_itoa_s(localTime.tm_year + 1900, year, 5, 10);
 		//put them in a single string
 		char date[14] = { 0 };
-		sprintf_s(date, "%s\\%s\\%s", month, day, year);
+		sprintf_s(date, "%s/%s/%s", month, day, year);
 
 		if (CompareDates(date, szDate) < 0) {
 			WriteChatf("\ag[MQ2AutoClaim]\aw Next check scheduled for \ay%s\aw", szDate);
@@ -223,7 +223,7 @@ PLUGIN_API VOID OnPulse(VOID)
 			_itoa_s(localTime.tm_year + 1900, year, 5, 10);
 			//put them in a single string
 			char date[14] = { 0 };
-			sprintf_s(date, "%s\\%s\\%s", month, day, year);
+			sprintf_s(date, "%s/%s/%s", month, day, year);
 
 			WritePrivateProfileString("NextCheck", szName, date, INIFileName);
 		}
