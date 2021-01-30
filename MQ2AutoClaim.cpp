@@ -171,7 +171,7 @@ PLUGIN_API VOID OnPulse(VOID)
 		if (!szCash[0]) return;
 
 		if (MarketWnd && Desc) {	
-			GetCXStr(Desc->STMLText, szDesc, MAX_STRING);
+			GetCXStr(Desc->STMLText.Ptr, szDesc, MAX_STRING);
 			if (bdebugging) WriteChatf("Desc: %s", szDesc);
 		}
 		if (!szDesc[0]) return;
@@ -201,7 +201,7 @@ PLUGIN_API VOID OnPulse(VOID)
 	}
 	case 4:
 		if (MarketWnd && Desc) {
-			GetCXStr(Desc->STMLText, szDesc, MAX_STRING);
+			GetCXStr(Desc->STMLText.Ptr, szDesc, MAX_STRING);
 		}
 		if (strncmp(szDesc, "Next reward:", 12) == 0) {
 			szDesc[38] = 0;//cut off the string
