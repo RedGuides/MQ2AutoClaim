@@ -23,6 +23,14 @@ PreSetup("MQ2AutoClaim");
 int GetSubscriptionLevel();
 void LoadINI();
 
+// FIXME: This should be provided by MQ2Main
+#define INITIALIZE_EQGAME_OFFSET(var) DWORD var = (((DWORD)var##_x - 0x400000) + baseAddress)
+INITIALIZE_EQGAME_OFFSET(pinstCMarketplaceWnd);
+INITIALIZE_EQGAME_OFFSET(pinstCPurchaseGroupWnd);
+
+CSidlScreenWnd** ppMarketplaceWnd = (CSidlScreenWnd**)pinstCMarketplaceWnd;
+CSidlScreenWnd** ppPurchaseGroupWnd = (CSidlScreenWnd**)pinstCPurchaseGroupWnd;
+
 enum Subscription {
 	SUB_BRONZE,
 	SUB_SILVER,
@@ -98,22 +106,13 @@ PLUGIN_API VOID OnPulse(VOID)
 
 	if (bdebugging) WriteChatf("PluginState: %i", PluginState);
 
-	static unsigned long long Tick = 0;
 	static unsigned long long AbortTick = 0;
 	static char szDesc[MAX_STRING] = { 0 };
 	static char szName[MAX_STRING] = { 0 };//This is the account name.
 	static char szCash[64] = { 0 };
 	static char szDate[12] = { 0 };
-	CSidlScreenWnd* MarketWnd = (CSidlScreenWnd*)FindMQ2Window("MarketPlaceWnd");
-	CXWnd* Funds;
-	if (MarketWnd)
-		Funds = MarketWnd->GetChildItem("MKPW_AvailableFundsUpper");
-	CStmlWnd* Desc;
-	if (MarketWnd)
-		Desc = (CStmlWnd*)MarketWnd->GetChildItem("MKPW_ClaimDescription");
-	CSidlScreenWnd* PopupWnd = (CSidlScreenWnd*)FindMQ2Window("PurchaseGroupWnd");
 
-	Tick = GetTickCount642();
+	uint64_t Tick = GetTickCount64();
 
 	if (Tick > AbortTick && PluginState != 1)
 	{
@@ -164,13 +163,19 @@ PLUGIN_API VOID OnPulse(VOID)
 		break;
 	}
 	case 2: // Wait for market place window to open and populate	
-		if (MarketWnd && Funds) {
-				GetCXStr(Funds->CGetWindowText(), szCash, 64);
-				if (bdebugging) WriteChatf("Current Funds: %s", szCash);
-		}
-		if (!szCash[0]) return;
+	case 2: // Wait for market place window to open and populate
+	{
+		CSidlScreenWnd* MarketWnd = *ppMarketplaceWnd;
+		CXWnd* Funds = MarketWnd ? MarketWnd->GetChildItem("MKPW_AvailableFundsUpper") : nullptr;
 
-		if (MarketWnd && Desc) {	
+		if (MarketWnd && Funds) {
+			GetCXStr(Funds->CGetWindowText(), szCash, 64);
+			if (bdebugging) WriteChatf("Current Funds: %s", szCash);
+		}
+		if (!szCash[0] || !_stricmp(szCash, "...")) return;
+
+		CStmlWnd* Desc = MarketWnd ? (CStmlWnd*)MarketWnd->GetChildItem("MKPW_ClaimDescription") : nullptr;
+		if (MarketWnd && Desc) {
 			GetCXStr(Desc->STMLText, szDesc, MAX_STRING);
 			if (bdebugging) WriteChatf("Desc: %s", szDesc);
 		}
@@ -186,20 +191,28 @@ PLUGIN_API VOID OnPulse(VOID)
 		WriteChatf("\ag[MQ2AutoClaim]\aw Sorry, No free SC yet.");
 		PluginState = 4;
 		break;
-	case 3:	// Wait for funds to update 
+	}
+	case 3:	// Wait for funds to update
 	{
+		CSidlScreenWnd* MarketWnd = *ppMarketplaceWnd;
+		CXWnd* Funds = MarketWnd ? MarketWnd->GetChildItem("MKPW_AvailableFundsUpper") : nullptr;
+
 		char sztemp[64] = { 0 };
 		if (MarketWnd && Funds) {
 			GetCXStr(Funds->CGetWindowText(), sztemp, 64);
 			if (bdebugging) WriteChatf("Comparing Funds. Current: %s, Previous: %s", sztemp, szCash);
 		}
-		if (_stricmp(sztemp, szCash) == 0) 
+		if (_stricmp(sztemp, szCash) == 0)
 			return;
 		WriteChatf("\at[\agMQ2AutoClaim\at]\aw: \agClaimed your +500 free SC! You have \ay %s \aw SC.", sztemp);
 		PluginState = 4;
 		break;
 	}
 	case 4:
+	{
+		CSidlScreenWnd* MarketWnd = *ppMarketplaceWnd;
+		CStmlWnd* Desc = MarketWnd ? (CStmlWnd*)MarketWnd->GetChildItem("MKPW_ClaimDescription") : nullptr;
+
 		if (MarketWnd && Desc) {
 			GetCXStr(Desc->STMLText, szDesc, MAX_STRING);
 		}
@@ -229,7 +242,10 @@ PLUGIN_API VOID OnPulse(VOID)
 		}
 		PluginState = 5;
 		break;
+	}
 	case 5:
+	{
+		CSidlScreenWnd* PopupWnd = *ppPurchaseGroupWnd;
 		if (PopupWnd) {
 			if (PopupWnd->IsVisible()) {
 				if (bDiscardPopup) PopupWnd->SetVisible(false);
@@ -238,6 +254,7 @@ PLUGIN_API VOID OnPulse(VOID)
 		}
 		if (!bClaimed) PluginState = 0;
 		break;
+	}
 	}
 
 }
