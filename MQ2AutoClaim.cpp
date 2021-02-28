@@ -1,21 +1,32 @@
-/* 
-MQ2AutoClaim  - Claim your free station cash
-
-   Original Author : Dewey2461
-	 Updated by Chatwiththisname.
-   FILES: MQ2AutoClaim.INI - Used to store the "next" reward date. 
-
-   Original Author notes: This was originally a macro, it was converted to a plugin so it will automatically run at startup. 
-		WARNING: Makes heavy use of ParseMacroData to Evaluate MQ2 macro code, you are free to refactor it. 
-			If you make changes please push the changes back to the author. 
-
-	Update 12/16/2019 - Chatwiththisname - 
-		No longer requires you open the DB Store window. 
-		No longer parses macro data.
-		Now uses login name instead of character name.
-		Optional INI Entry added - AutoClosePopup, defaults to 0. If anything other than 0 it's true. If it's not present it's false.
-			if true will automatically close the popup you get after claiming DBCash
-*/
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////
+//
+//   MQ2AutoClaim  - Claim your free station cash
+//
+//   Author : Dewey2461
+//
+//   FILES: MQ2AutoClaim.INI - Used to store the "next" reward date.
+//
+//   This was originally a macro, it was converted to a plugin so it will automatically run at startup.
+//		WARNING: Makes heavy use of ParseMacroData to Evaluate MQ2 macro code, you are free to refactor it.
+//			If you make changes please push the changes back to the author.
+//
+////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
+////
+//
+//
+//  IMPLEMENTATION NOTES:
+//
+//	/echo ${Window[MKPW_ClaimWindow].Child[MKPW_ClaimDescription].Text}
+//
+//  Option #1 - Reward expires:<br><c "#FFFF00">mm/dd/yy hh:mmPM</c>	- Time to collect
+//  Option #2 - Next Reward: mm/dd/yy   								- Already collected
+//  Option #3 - Not a member? Click for details!						- Not gold.
+//
+//
+////
+////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 #include "../MQ2Plugin.h"
 
