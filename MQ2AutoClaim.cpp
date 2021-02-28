@@ -187,7 +187,6 @@ PLUGIN_API VOID OnPulse(VOID)
 		PluginState = 2;
 		break;
 	}
-	case 2: // Wait for market place window to open and populate	
 	case 2: // Wait for market place window to open and populate
 	{
 		CSidlScreenWnd* MarketWnd = *ppMarketplaceWnd;
