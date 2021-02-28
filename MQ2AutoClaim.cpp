@@ -31,6 +31,10 @@
 #include "../MQ2Plugin.h"
 
 PreSetup("MQ2AutoClaim");
+
+#include <chrono>
+using namespace std::chrono_literals;
+
 int GetSubscriptionLevel();
 void LoadINI();
 
@@ -105,12 +109,22 @@ int CompareDates(char* s1, char* s2)
 }
 
 
+std::chrono::steady_clock::time_point LastUpdate = {};
+int LastState = -1;
 
 // Doing all the heavy lifting in OnPulse via a State Machine "PluginState"
 PLUGIN_API VOID OnPulse(VOID)
 {
 	if (!PluginState || gGameState != GAMESTATE_INGAME || !GetCharInfo() || !GetCharInfo2() || !GetCharInfo()->pSpawn) 
 		return;
+
+	// Throttle update frequency to once every 60 seconds
+	auto thisUpdate = std::chrono::steady_clock::now();
+	if (PluginState == LastState && thisUpdate - LastUpdate < 1s)
+		return;
+	LastUpdate = thisUpdate;
+	LastState = PluginState;
+
 	if (!bINILoaded) {
 		LoadINI();
 	}
