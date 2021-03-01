@@ -8,8 +8,8 @@
 //   FILES: MQ2AutoClaim.INI - Used to store the "next" reward date.
 //
 //   This was originally a macro, it was converted to a plugin so it will automatically run at startup.
-//		WARNING: Makes heavy use of ParseMacroData to Evaluate MQ2 macro code, you are free to refactor it.
-//			If you make changes please push the changes back to the author.
+//   This plugin was originally written using ParseMacroData and was updated to not need that by ChatWithThisName
+//   For full changelog see https://gitlab.com/redguides/VeryVanilla/-/blob/master/MQ2AutoClaim/MQ2AutoClaim.cpp
 //
 ////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -18,11 +18,11 @@
 //
 //  IMPLEMENTATION NOTES:
 //
-//	/echo ${Window[MKPW_ClaimWindow].Child[MKPW_ClaimDescription].Text}
+//  /echo ${Window[MKPW_ClaimWindow].Child[MKPW_ClaimDescription].Text}
 //
-//  Option #1 - Reward expires:<br><c "#FFFF00">mm/dd/yy hh:mmPM</c>	- Time to collect
-//  Option #2 - Next Reward: mm/dd/yy   								- Already collected
-//  Option #3 - Not a member? Click for details!						- Not gold.
+//  Option #1 - Reward expires:<br><c "#FFFF00">mm/dd/yy hh:mmPM</c>    - Time to collect
+//  Option #2 - Next Reward: mm/dd/yy                                   - Already collected
+//  Option #3 - Not a member? Click for details!                        - Not gold.
 //
 //
 ////
@@ -34,6 +34,7 @@ PreSetup("MQ2AutoClaim");
 
 #include <chrono>
 using namespace std::chrono_literals;
+using std::chrono::steady_clock;
 
 int GetSubscriptionLevel();
 void LoadINI();
@@ -109,7 +110,7 @@ int CompareDates(char* s1, char* s2)
 }
 
 
-std::chrono::steady_clock::time_point LastUpdate = {};
+steady_clock::time_point LastUpdate = {};
 int LastState = -1;
 
 // Doing all the heavy lifting in OnPulse via a State Machine "PluginState"
@@ -118,11 +119,11 @@ PLUGIN_API VOID OnPulse(VOID)
 	if (!PluginState || gGameState != GAMESTATE_INGAME || !GetCharInfo() || !GetCharInfo2() || !GetCharInfo()->pSpawn) 
 		return;
 
-	// Throttle update frequency to once every 60 seconds
-	auto thisUpdate = std::chrono::steady_clock::now();
-	if (PluginState == LastState && thisUpdate - LastUpdate < 1s)
+	// Throttle update frequency to once every second
+	auto nowTime = std::chrono::steady_clock::now();
+	if (PluginState == LastState && nowTime - LastUpdate < 1s)
 		return;
-	LastUpdate = thisUpdate;
+	LastUpdate = nowTime;
 	LastState = PluginState;
 
 	if (!bINILoaded) {
@@ -131,15 +132,13 @@ PLUGIN_API VOID OnPulse(VOID)
 
 	if (bdebugging) WriteChatf("PluginState: %i", PluginState);
 
-	static unsigned long long AbortTick = 0;
+	static steady_clock::time_point abortTime = {};
 	static char szDesc[MAX_STRING] = { 0 };
 	static char szName[MAX_STRING] = { 0 };//This is the account name.
 	static char szCash[64] = { 0 };
 	static char szDate[12] = { 0 };
 
-	uint64_t Tick = GetTickCount64();
-
-	if (Tick > AbortTick && PluginState != 1)
+	if (nowTime > abortTime && PluginState != 1)
 	{
 		WriteChatf("[MQ2AutoClaim] Aborting... 120s should be plenty of time so something went wrong");
 		PluginState = 0;
@@ -182,8 +181,8 @@ PLUGIN_API VOID OnPulse(VOID)
 			return;
 		}
 
-		// We are GOLD and NextCheck looks like we might have some SC ready. 
-		AbortTick = Tick + 120000;
+		// We are GOLD and NextCheck looks like we might have some SC ready.
+		abortTime = nowTime + 2min;
 		PluginState = 2;
 		break;
 	}
