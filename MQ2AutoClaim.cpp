@@ -39,14 +39,6 @@ using std::chrono::steady_clock;
 int GetSubscriptionLevel();
 void LoadINI();
 
-// FIXME: This should be provided by MQ2Main
-#define INITIALIZE_EQGAME_OFFSET(var) DWORD var = (((DWORD)var##_x - 0x400000) + baseAddress)
-INITIALIZE_EQGAME_OFFSET(pinstCMarketplaceWnd);
-INITIALIZE_EQGAME_OFFSET(pinstCPurchaseGroupWnd);
-
-CSidlScreenWnd** ppMarketplaceWnd = (CSidlScreenWnd**)pinstCMarketplaceWnd;
-CSidlScreenWnd** ppPurchaseGroupWnd = (CSidlScreenWnd**)pinstCPurchaseGroupWnd;
-
 enum Subscription {
 	SUB_BRONZE,
 	SUB_SILVER,
@@ -188,17 +180,15 @@ PLUGIN_API VOID OnPulse(VOID)
 	}
 	case 2: // Wait for market place window to open and populate
 	{
-		CSidlScreenWnd* MarketWnd = *ppMarketplaceWnd;
-		CXWnd* Funds = MarketWnd ? MarketWnd->GetChildItem("MKPW_AvailableFundsUpper") : nullptr;
-
-		if (MarketWnd && Funds) {
+		CXWnd* Funds = pMarketplaceWnd ? pMarketplaceWnd->GetChildItem("MKPW_AvailableFundsUpper") : nullptr;
+		if (Funds) {
 			GetCXStr(Funds->CGetWindowText(), szCash, 64);
 			if (bdebugging) WriteChatf("Current Funds: %s", szCash);
 		}
 		if (!szCash[0] || !_stricmp(szCash, "...")) return;
 
-		CStmlWnd* Desc = MarketWnd ? (CStmlWnd*)MarketWnd->GetChildItem("MKPW_ClaimDescription") : nullptr;
-		if (MarketWnd && Desc) {
+		CStmlWnd* Desc = pMarketplaceWnd ? (CStmlWnd*)pMarketplaceWnd->GetChildItem("MKPW_ClaimDescription") : nullptr;
+		if (Desc) {
 			GetCXStr(Desc->STMLText, szDesc, MAX_STRING);
 			if (bdebugging) WriteChatf("Desc: %s", szDesc);
 		}
@@ -217,11 +207,10 @@ PLUGIN_API VOID OnPulse(VOID)
 	}
 	case 3:	// Wait for funds to update
 	{
-		CSidlScreenWnd* MarketWnd = *ppMarketplaceWnd;
-		CXWnd* Funds = MarketWnd ? MarketWnd->GetChildItem("MKPW_AvailableFundsUpper") : nullptr;
-
 		char sztemp[64] = { 0 };
-		if (MarketWnd && Funds) {
+
+		CXWnd* Funds = pMarketplaceWnd ? pMarketplaceWnd->GetChildItem("MKPW_AvailableFundsUpper") : nullptr;
+		if (Funds) {
 			GetCXStr(Funds->CGetWindowText(), sztemp, 64);
 			if (bdebugging) WriteChatf("Comparing Funds. Current: %s, Previous: %s", sztemp, szCash);
 		}
@@ -233,10 +222,8 @@ PLUGIN_API VOID OnPulse(VOID)
 	}
 	case 4:
 	{
-		CSidlScreenWnd* MarketWnd = *ppMarketplaceWnd;
-		CStmlWnd* Desc = MarketWnd ? (CStmlWnd*)MarketWnd->GetChildItem("MKPW_ClaimDescription") : nullptr;
-
-		if (MarketWnd && Desc) {
+		CStmlWnd* Desc = pMarketplaceWnd ? (CStmlWnd*)pMarketplaceWnd->GetChildItem("MKPW_ClaimDescription") : nullptr;
+		if (Desc) {
 			GetCXStr(Desc->STMLText, szDesc, MAX_STRING);
 		}
 		if (strncmp(szDesc, "Next reward:", 12) == 0) {
@@ -268,12 +255,9 @@ PLUGIN_API VOID OnPulse(VOID)
 	}
 	case 5:
 	{
-		CSidlScreenWnd* PopupWnd = *ppPurchaseGroupWnd;
-		if (PopupWnd) {
-			if (PopupWnd->IsVisible()) {
-				if (bDiscardPopup) PopupWnd->SetVisible(false);
-				bClaimed = false;
-			}
+		if (pPurchaseGroupWnd && pPurchaseGroupWnd->IsVisible()) {
+			if (bDiscardPopup) pPurchaseGroupWnd->SetVisible(false);
+			bClaimed = false;
 		}
 		if (!bClaimed) PluginState = 0;
 		break;
