@@ -28,11 +28,12 @@
 ////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-#include "../MQ2Plugin.h"
+#include <mq/Plugin.h>
+#include <chrono>
 
 PreSetup("MQ2AutoClaim");
+PLUGIN_VERSION(1.0);
 
-#include <chrono>
 using namespace std::chrono_literals;
 using std::chrono::steady_clock;
 
@@ -51,21 +52,15 @@ bool bdebugging = false;//toggle for dev debugging.
 bool bDiscardPopup = false;//Should I automatically discard the popup offer after claiming.
 bool bINILoaded = false;//if the INI has been loaded or not.
 
-PLUGIN_API VOID InitializePlugin(VOID)
+PLUGIN_API void InitializePlugin()
 {
 	PluginState = 1;
 }
 
-PLUGIN_API VOID ShutdownPlugin(VOID)
+PLUGIN_API void SetGameState(int GameState)
 {
-
+	if (GameState == GAMESTATE_CHARSELECT)	PluginState = 1;
 }
-
-PLUGIN_API VOID SetGameState(DWORD GameState)
-{
-	if (gGameState == GAMESTATE_CHARSELECT)	PluginState = 1;
-}
-
 
 // 01234567    0123456789
 // mm/dd/yy or mm/dd/yyyy
@@ -106,9 +101,9 @@ steady_clock::time_point LastUpdate = {};
 int LastState = -1;
 
 // Doing all the heavy lifting in OnPulse via a State Machine "PluginState"
-PLUGIN_API VOID OnPulse(VOID)
+PLUGIN_API void OnPulse()
 {
-	if (!PluginState || gGameState != GAMESTATE_INGAME || !GetCharInfo() || !GetCharInfo2() || !GetCharInfo()->pSpawn) 
+	if (!PluginState || gGameState != GAMESTATE_INGAME || !GetCharInfo() || !GetCharInfo()->pSpawn)
 		return;
 
 	// Throttle update frequency to once every second
@@ -182,14 +177,14 @@ PLUGIN_API VOID OnPulse(VOID)
 	{
 		CXWnd* Funds = pMarketplaceWnd ? pMarketplaceWnd->GetChildItem("MKPW_AvailableFundsUpper") : nullptr;
 		if (Funds) {
-			GetCXStr(Funds->CGetWindowText(), szCash, 64);
+			strcpy_s(szCash, Funds->GetWindowText().c_str());
 			if (bdebugging) WriteChatf("Current Funds: %s", szCash);
 		}
 		if (!szCash[0] || !_stricmp(szCash, "...")) return;
 
 		CStmlWnd* Desc = pMarketplaceWnd ? (CStmlWnd*)pMarketplaceWnd->GetChildItem("MKPW_ClaimDescription") : nullptr;
 		if (Desc) {
-			GetCXStr(Desc->STMLText, szDesc, MAX_STRING);
+			strcpy_s(szDesc, Desc->STMLText.c_str());
 			if (bdebugging) WriteChatf("Desc: %s", szDesc);
 		}
 		if (!szDesc[0]) return;
@@ -211,7 +206,7 @@ PLUGIN_API VOID OnPulse(VOID)
 
 		CXWnd* Funds = pMarketplaceWnd ? pMarketplaceWnd->GetChildItem("MKPW_AvailableFundsUpper") : nullptr;
 		if (Funds) {
-			GetCXStr(Funds->CGetWindowText(), sztemp, 64);
+			strcpy_s(sztemp, Funds->GetWindowText().c_str());
 			if (bdebugging) WriteChatf("Comparing Funds. Current: %s, Previous: %s", sztemp, szCash);
 		}
 		if (_stricmp(sztemp, szCash) == 0)
@@ -224,13 +219,13 @@ PLUGIN_API VOID OnPulse(VOID)
 	{
 		CStmlWnd* Desc = pMarketplaceWnd ? (CStmlWnd*)pMarketplaceWnd->GetChildItem("MKPW_ClaimDescription") : nullptr;
 		if (Desc) {
-			GetCXStr(Desc->STMLText, szDesc, MAX_STRING);
+			strcpy_s(szDesc, Desc->STMLText.c_str());
 		}
 		if (strncmp(szDesc, "Next reward:", 12) == 0) {
 			szDesc[38] = 0;//cut off the string
 			WritePrivateProfileString("NextCheck", szName, &szDesc[29], INIFileName);
 		}
-		else { // Try again tomorrow 
+		else { // Try again tomorrow
 			time_t now = time(0);
 			struct tm localTime;
 			localtime_s(&localTime, &now);
