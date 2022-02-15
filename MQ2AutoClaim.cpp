@@ -263,7 +263,7 @@ PLUGIN_API void OnPulse()
 
 int GetSubscriptionLevel() {
 	if (EQADDR_SUBSCRIPTIONTYPE && *EQADDR_SUBSCRIPTIONTYPE) {
-		if (DWORD dwsubtype = *(DWORD*)EQADDR_SUBSCRIPTIONTYPE) {
+		if (uintptr_t dwsubtype = *(DWORD*)EQADDR_SUBSCRIPTIONTYPE) {
 			BYTE subtype = *(BYTE*)dwsubtype;
 			return subtype;
 		}
