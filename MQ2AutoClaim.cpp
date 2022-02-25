@@ -37,7 +37,6 @@ PLUGIN_VERSION(1.0);
 using namespace std::chrono_literals;
 using std::chrono::steady_clock;
 
-int GetSubscriptionLevel();
 void LoadINI();
 
 enum Subscription {
@@ -259,16 +258,6 @@ PLUGIN_API void OnPulse()
 	}
 	}
 
-}
-
-int GetSubscriptionLevel() {
-	if (EQADDR_SUBSCRIPTIONTYPE && *EQADDR_SUBSCRIPTIONTYPE) {
-		if (uintptr_t dwsubtype = *(uintptr_t*)EQADDR_SUBSCRIPTIONTYPE) {
-			BYTE subtype = *(BYTE*)dwsubtype;
-			return subtype;
-		}
-	}
-	return false;
 }
 
 void LoadINI() {
