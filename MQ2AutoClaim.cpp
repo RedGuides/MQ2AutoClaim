@@ -39,12 +39,6 @@ using std::chrono::steady_clock;
 
 void LoadINI();
 
-enum Subscription {
-	SUB_BRONZE,
-	SUB_SILVER,
-	SUB_GOLD
-};
-
 int PluginState = 0;
 bool bClaimed = false;//Did I hit the claim button?
 bool bdebugging = false;//toggle for dev debugging.
@@ -137,8 +131,8 @@ PLUGIN_API void OnPulse()
 		PluginState = 0;
 		WriteChatf("\ag[MQ2AutoClaim]\aw Automatically claims your free station cash - Credit \ayDewey2461\aw");
 
-		if (GetSubscriptionLevel() != SUB_GOLD) {
-			WriteChatf("\ag[MQ2AutoClaim]\aw Account is not gold. No free station cash.");
+		if (GetMembershipLevel() < MembershipLevel::AllAccess) {
+			WriteChatf("\ag[MQ2AutoClaim]\aw Account is not All Access. No free station cash.");
 			return;
 		}
 
