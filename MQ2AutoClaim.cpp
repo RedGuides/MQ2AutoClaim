@@ -96,6 +96,10 @@ int LastState = -1;
 // Doing all the heavy lifting in OnPulse via a State Machine "PluginState"
 PLUGIN_API void OnPulse()
 {
+#ifdef ROF2EMU
+	return;
+#endif
+
 	if (!PluginState || gGameState != GAMESTATE_INGAME || !GetCharInfo() || !GetCharInfo()->pSpawn)
 		return;
 
@@ -131,11 +135,12 @@ PLUGIN_API void OnPulse()
 		PluginState = 0;
 		WriteChatf("\ag[MQ2AutoClaim]\aw Automatically claims your free station cash - Credit \ayDewey2461\aw");
 
+#if IS_EXPANSION_LEVEL(EXPANSION_LEVEL_ROF + 1)
 		if (GetMembershipLevel() < MembershipLevel::AllAccess) {
 			WriteChatf("\ag[MQ2AutoClaim]\aw Account is not All Access. No free station cash.");
 			return;
 		}
-
+#endif
 		sprintf_s(szName, 64, GetLoginName());
 		GetPrivateProfileString("NextCheck", szName, "01/01/2000", szDate, 12, INIFileName);
 
